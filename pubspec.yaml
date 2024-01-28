@@ -5,31 +5,31 @@ author: Norbert Kozsir <norbert@neohelden.com>
 homepage: https://github.com/neohelden/Flutter-AdaptiveCards
 
 environment:
-  sdk: ">=2.0.0-dev.68.0 <3.0.0"
+  sdk: '>=3.0.1 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
 
-  uuid: ^2.0.2
-  chewie: ^0.9.8+1
+  uuid: any
+  chewie: any
   # Using the git dependency because the newest version isn't published on pub yet
   # chewie:
   #   git:
   #     url: https://github.com/brianegan/chewie.git
-  http: ^0.11.3+16
+  http: any
   intl: any
-  tinycolor: ^1.0.2
-  provider: ^3.1.0+1
+  tinycolor2: ^3.0.1
+  provider: any
 
-  flutter_markdown: ^0.3.4
-  url_launcher: ^5.4.2
+  flutter_markdown: any
+  url_launcher: any
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  test: ^1.5.1
-  mockito: ^4.0.0
+  test: any
+  mockito: any
 
 # For information on the generic Dart part of this file, see the
 # following page: https://www.dartlang.org/tools/pub/pubspec

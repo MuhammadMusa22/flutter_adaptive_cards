@@ -3,8 +3,11 @@ import 'base.dart';
 import 'basics.dart';
 
 class IconButtonAction extends StatefulWidget with AdaptiveElementWidgetMixin {
-  IconButtonAction({Key key, this.adaptiveMap, this.onTapped})
-      : super(key: key);
+  IconButtonAction({
+    Key? key,
+    required this.adaptiveMap,
+    required this.onTapped,
+  }) : super(key: key);
 
   final Map adaptiveMap;
 
@@ -14,9 +17,9 @@ class IconButtonAction extends StatefulWidget with AdaptiveElementWidgetMixin {
   _IconButtonActionState createState() => _IconButtonActionState();
 }
 
-class _IconButtonActionState extends State<IconButtonAction>
-    with AdaptiveActionMixin, AdaptiveElementMixin {
-  String iconUrl;
+class _IconButtonActionState extends State<IconButtonAction> with AdaptiveActionMixin, AdaptiveElementMixin {
+  String iconUrl='';
+
   @override
   void initState() {
     super.initState();
@@ -25,13 +28,13 @@ class _IconButtonActionState extends State<IconButtonAction>
 
   @override
   Widget build(BuildContext context) {
-    Widget result = RaisedButton(
+    Widget result = ElevatedButton(
       onPressed: onTapped,
       child: Text(title),
     );
 
     if (iconUrl != null) {
-      result = RaisedButton.icon(
+      result = ElevatedButton.icon(
         onPressed: onTapped,
         icon: Image.network(
           iconUrl,
@@ -47,9 +50,8 @@ class _IconButtonActionState extends State<IconButtonAction>
   void onTapped() => widget.onTapped();
 }
 
-class AdaptiveActionShowCard extends StatefulWidget
-    with AdaptiveElementWidgetMixin {
-  AdaptiveActionShowCard({Key key, this.adaptiveMap}) : super(key: key);
+class AdaptiveActionShowCard extends StatefulWidget with AdaptiveElementWidgetMixin {
+  AdaptiveActionShowCard({Key? key,required this.adaptiveMap}) : super(key: key);
 
   final Map adaptiveMap;
 
@@ -57,8 +59,7 @@ class AdaptiveActionShowCard extends StatefulWidget
   _AdaptiveActionShowCardState createState() => _AdaptiveActionShowCardState();
 }
 
-class _AdaptiveActionShowCardState extends State<AdaptiveActionShowCard>
-    with AdaptiveActionMixin, AdaptiveElementMixin {
+class _AdaptiveActionShowCardState extends State<AdaptiveActionShowCard> with AdaptiveActionMixin, AdaptiveElementMixin {
   @override
   void initState() {
     super.initState();
@@ -73,14 +74,12 @@ class _AdaptiveActionShowCardState extends State<AdaptiveActionShowCard>
 
   @override
   Widget build(BuildContext context) {
-    return RaisedButton(
+    return ElevatedButton(
       onPressed: onTapped,
       child: Row(
         children: <Widget>[
           Text(title),
-          AdaptiveCardElementState.of(context).currentCardId == id
-              ? Icon(Icons.keyboard_arrow_up)
-              : Icon(Icons.keyboard_arrow_down),
+          AdaptiveCardElementState.of(context).currentCardId == id ? Icon(Icons.keyboard_arrow_up) : Icon(Icons.keyboard_arrow_down),
         ],
       ),
     );
@@ -95,10 +94,8 @@ class _AdaptiveActionShowCardState extends State<AdaptiveActionShowCard>
   }
 }
 
-class AdaptiveActionSubmit extends StatefulWidget
-    with AdaptiveElementWidgetMixin {
-  AdaptiveActionSubmit({Key key, this.adaptiveMap, this.color})
-      : super(key: key);
+class AdaptiveActionSubmit extends StatefulWidget with AdaptiveElementWidgetMixin {
+  AdaptiveActionSubmit({Key? key,required this.adaptiveMap,required this.color}) : super(key: key);
 
   final Map adaptiveMap;
 
@@ -109,9 +106,8 @@ class AdaptiveActionSubmit extends StatefulWidget
   _AdaptiveActionSubmitState createState() => _AdaptiveActionSubmitState();
 }
 
-class _AdaptiveActionSubmitState extends State<AdaptiveActionSubmit>
-    with AdaptiveActionMixin, AdaptiveElementMixin {
-  GenericSubmitAction action;
+class _AdaptiveActionSubmitState extends State<AdaptiveActionSubmit> with AdaptiveActionMixin, AdaptiveElementMixin {
+  late GenericSubmitAction action;
 
   @override
   void initState() {
@@ -121,11 +117,12 @@ class _AdaptiveActionSubmitState extends State<AdaptiveActionSubmit>
 
   @override
   Widget build(BuildContext context) {
-    return FlatButton(
-      color:  new Color(0xFF1b4f80),
-      textColor: new Color(0xFF0088DB),
+    return TextButton(
+      // color: new Color(0xFF1b4f80),
+      // textColor: new Color(0xFF0088DB),
       onPressed: onTapped,
-      child: Text(title,
+      child: Text(
+        title,
         style: TextStyle(
           color: Colors.white,
         ),
@@ -139,19 +136,18 @@ class _AdaptiveActionSubmitState extends State<AdaptiveActionSubmit>
   }
 }
 
-class AdaptiveActionOpenUrl extends StatefulWidget
-    with AdaptiveElementWidgetMixin {
-  AdaptiveActionOpenUrl({Key key, this.adaptiveMap}) : super(key: key);
+class AdaptiveActionOpenUrl extends StatefulWidget with AdaptiveElementWidgetMixin {
+  AdaptiveActionOpenUrl({Key? key,required this.adaptiveMap}) : super(key: key);
 
   final Map adaptiveMap;
+
   @override
   _AdaptiveActionOpenUrlState createState() => _AdaptiveActionOpenUrlState();
 }
 
-class _AdaptiveActionOpenUrlState extends State<AdaptiveActionOpenUrl>
-    with AdaptiveActionMixin, AdaptiveElementMixin {
-  GenericActionOpenUrl action;
-  String iconUrl;
+class _AdaptiveActionOpenUrlState extends State<AdaptiveActionOpenUrl> with AdaptiveActionMixin, AdaptiveElementMixin {
+  late GenericActionOpenUrl action;
+  late String iconUrl;
 
   @override
   void initState() {

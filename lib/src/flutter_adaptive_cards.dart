@@ -12,63 +12,79 @@ import 'elements/base.dart';
 import 'registry.dart';
 import 'utils.dart';
 
+
 abstract class AdaptiveCardContentProvider {
-  AdaptiveCardContentProvider({@required this.hostConfigPath});
+  AdaptiveCardContentProvider({required this.hostConfigPath});
 
   final String hostConfigPath;
 
-  Future<Map> loadHostConfig() async {
+  Future<Map<String, dynamic>> loadHostConfig() async {
     String hostConfigString = await rootBundle.loadString(hostConfigPath);
     return json.decode(hostConfigString);
   }
 
-  Future<Map> loadAdaptiveCardContent();
+  Future<Map<String, dynamic>> loadAdaptiveCardContent();
 }
 
 class MemoryAdaptiveCardContentProvider extends AdaptiveCardContentProvider {
-  MemoryAdaptiveCardContentProvider(
-      {@required this.content, @required String hostConfigPath})
-      : super(hostConfigPath: hostConfigPath);
+  MemoryAdaptiveCardContentProvider({
+    required this.content,
+    required String hostConfigPath,
+  }) : super(hostConfigPath: hostConfigPath);
 
-  Map content;
+  final Map<String, dynamic> content;
 
   @override
-  Future<Map> loadAdaptiveCardContent() {
-    return Future.value(content);
+  Future<Map<String, dynamic>> loadAdaptiveCardContent() async {
+    // Return the content directly as a future value
+    return content;
   }
 }
 
 class AssetAdaptiveCardContentProvider extends AdaptiveCardContentProvider {
-  AssetAdaptiveCardContentProvider(
-      {@required this.path, @required String hostConfigPath})
-      : super(hostConfigPath: hostConfigPath);
+  AssetAdaptiveCardContentProvider({
+    required this.path,
+    required String hostConfigPath,
+  }) : super(hostConfigPath: hostConfigPath);
 
-  String path;
+  final String path;
 
   @override
-  Future<Map> loadAdaptiveCardContent() async {
-    return json.decode(await rootBundle.loadString(path));
+  Future<Map<String, dynamic>> loadAdaptiveCardContent() async {
+    final String jsonString = await rootBundle.loadString(path);
+    return json.decode(jsonString) as Map<String, dynamic>;
   }
 }
+
 
 class NetworkAdaptiveCardContentProvider extends AdaptiveCardContentProvider {
-  NetworkAdaptiveCardContentProvider(
-      {@required this.url, @required String hostConfigPath})
-      : super(hostConfigPath: hostConfigPath);
+  NetworkAdaptiveCardContentProvider({
+    required this.url,
+    required String hostConfigPath,
+  }) : super(hostConfigPath: hostConfigPath);
 
-  String url;
+  final String url;
 
   @override
-  Future<Map> loadAdaptiveCardContent() async {
-    return json.decode((await http.get(url)).body);
+  Future<Map<String, dynamic>> loadAdaptiveCardContent() async {
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      return data;
+    } else {
+      throw Exception('Failed to load adaptive card content');
+    }
   }
 }
+
+
 
 class AdaptiveCard extends StatefulWidget {
   AdaptiveCard({
-    Key key,
-    @required this.map,
-    @required this.hostConfig,
+    required this.adaptiveCardContentProvider,
+    Key? key,
+    required this.map,
+    required this.hostConfig,
     this.placeholder,
     this.cardRegistry = const CardRegistry(),
     this.onSubmit,
@@ -79,76 +95,76 @@ class AdaptiveCard extends StatefulWidget {
   }) : super(key: key);
 
   AdaptiveCard.network({
-    Key key,
+    required this.map,
+    required this.hostConfig,
+    Key? key,
     this.placeholder,
-    this.cardRegistry,
-    @required String url,
-    @required String hostConfigPath,
+    required this.cardRegistry,
+    required String url,
+    required String hostConfigPath,
     this.onSubmit,
     this.onOpenUrl,
     this.showDebugJson = true,
     this.approximateDarkThemeColors = true,
     this.isAsync = true,
   }) : adaptiveCardContentProvider = NetworkAdaptiveCardContentProvider(
-            url: url, hostConfigPath: hostConfigPath);
+      url: url, hostConfigPath: hostConfigPath);
 
   AdaptiveCard.asset({
-    Key key,
+    Key? key,
     this.placeholder,
-    this.cardRegistry,
-    @required String assetPath,
-    @required String hostConfigPath,
+    required this.map,
+    required this.hostConfig,
+    required this.cardRegistry,
+    required String assetPath,
+    required String hostConfigPath,
     this.onSubmit,
     this.onOpenUrl,
     this.showDebugJson = true,
     this.approximateDarkThemeColors = true,
     this.isAsync = true,
   }) : adaptiveCardContentProvider = AssetAdaptiveCardContentProvider(
-            path: assetPath, hostConfigPath: hostConfigPath);
+      path: assetPath, hostConfigPath: hostConfigPath);
 
   AdaptiveCard.memory({
-    Key key,
+    required this.map,
+    required this.hostConfig,
+    Key? key,
     this.placeholder,
-    this.cardRegistry,
-    @required Map content,
-    @required String hostConfigPath,
+    required this.cardRegistry,
+    required Map<String, dynamic> content,
+    required String hostConfigPath,
     this.onSubmit,
     this.onOpenUrl,
     this.showDebugJson = true,
     this.approximateDarkThemeColors = true,
     this.isAsync = true,
   }) : adaptiveCardContentProvider = MemoryAdaptiveCardContentProvider(
-            content: content, hostConfigPath: hostConfigPath);
+      content: content, hostConfigPath: hostConfigPath);
 
-  AdaptiveCardContentProvider adaptiveCardContentProvider;
-
-  final Widget placeholder;
-
+  final AdaptiveCardContentProvider adaptiveCardContentProvider;
+  final Widget? placeholder;
   final CardRegistry cardRegistry;
-
-  final Function(Map map) onSubmit;
-  final Function(String url) onOpenUrl;
+  final Function(Map<String, dynamic> map)? onSubmit;
+  final Function(String url)? onOpenUrl;
   final bool showDebugJson;
   final bool approximateDarkThemeColors;
-  bool isAsync;
-  Map map;
-  Map hostConfig;
+  final bool isAsync;
+  Map<String, dynamic> map;
+  Map<String, dynamic> hostConfig;
 
   @override
-  _AdaptiveCardState createState() => new _AdaptiveCardState();
+  _AdaptiveCardState createState() => _AdaptiveCardState();
 }
 
 class _AdaptiveCardState extends State<AdaptiveCard> {
-  CardRegistry cardRegistry;
-
-  Function(Map map) onSubmit;
-  Function(String url) onOpenUrl;
+  late CardRegistry cardRegistry;
+  late Function(Map<String, dynamic> map) onSubmit;
+  late Function(String url) onOpenUrl;
 
   @override
   void initState() {
     super.initState();
-    // print("in AdaptiveCard init");
-    // print(json.encode(widget.map));
     if (widget.isAsync) {
       widget.adaptiveCardContentProvider.loadHostConfig().then((hostConfigMap) {
         setState(() {
@@ -175,7 +191,7 @@ class _AdaptiveCardState extends State<AdaptiveCard> {
     if (widget.cardRegistry != null) {
       cardRegistry = widget.cardRegistry;
     } else {
-      CardRegistry cardRegistry = DefaultCardRegistry.of(context);
+      CardRegistry? cardRegistry = DefaultCardRegistry.of(context);
       if (cardRegistry != null) {
         this.cardRegistry = cardRegistry;
       } else {
@@ -184,28 +200,28 @@ class _AdaptiveCardState extends State<AdaptiveCard> {
     }
 
     if (widget.onSubmit != null) {
-      onSubmit = widget.onSubmit;
+      onSubmit = widget.onSubmit!;
     } else {
       var foundOnSubmit = DefaultAdaptiveCardHandlers.of(context)?.onSubmit;
       if (foundOnSubmit != null) {
         onSubmit = foundOnSubmit;
       } else {
         onSubmit = (it) {
-          Scaffold.of(context).showSnackBar(SnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text("No handler found for: \n" + it.toString())));
         };
       }
     }
 
     if (widget.onOpenUrl != null) {
-      onOpenUrl = widget.onOpenUrl;
+      onOpenUrl = widget.onOpenUrl!;
     } else {
       var foundOpenUrl = DefaultAdaptiveCardHandlers.of(context)?.onOpenUrl;
       if (foundOpenUrl != null) {
         onOpenUrl = foundOpenUrl;
       } else {
         onOpenUrl = (it) {
-          Scaffold.of(context).showSnackBar(SnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text("No handler found for: \n" + it.toString())));
         };
       }
@@ -214,19 +230,19 @@ class _AdaptiveCardState extends State<AdaptiveCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.isAsync && (widget.map == null || widget.hostConfig == null)) {
+    if (widget.isAsync && (widget.map.isEmpty || widget.hostConfig.isEmpty)) {
       return widget.placeholder ?? const SizedBox();
     }
-    // print("in AdaptiveCard build");
-    // print(json.encode(widget.map));
     return Padding(
       padding: const EdgeInsets.all(0.0),
       child: RawAdaptiveCard.fromMap(
-        widget.map,
-        widget.hostConfig,
+        map: widget.map,
+        hostConfig: widget.hostConfig,
         cardRegistry: cardRegistry,
         onOpenUrl: onOpenUrl,
-        onSubmit: onSubmit,
+        onSubmit: (Map<dynamic, dynamic> map){
+          onSubmit(map as Map<String,dynamic>);
+        },
         showDebugJson: widget.showDebugJson,
         approximateDarkThemeColors: widget.approximateDarkThemeColors,
       ),
@@ -234,29 +250,30 @@ class _AdaptiveCardState extends State<AdaptiveCard> {
   }
 }
 
+
 /// Main entry point to adaptive cards.
 ///
 /// This widget takes a [map] (which usually is just a json decoded string) and
 /// displays in natively. Additionally a host config needs to be provided for
 /// styling.
 class RawAdaptiveCard extends StatefulWidget {
-  RawAdaptiveCard.fromMap(
-    this.map,
-    this.hostConfig, {
+  RawAdaptiveCard.fromMap({
+    Key? key,
+    required this.map,
+    required this.hostConfig,
     this.cardRegistry = const CardRegistry(),
-    @required this.onSubmit,
-    @required this.onOpenUrl,
+    required this.onSubmit,
+    required this.onOpenUrl,
     this.showDebugJson = true,
     this.approximateDarkThemeColors = true,
-  }) : assert(onSubmit != null, onOpenUrl != null);
+  }) : assert(onSubmit != null && onOpenUrl != null),
+        super(key: key);
 
   final Map map;
   final Map hostConfig;
   final CardRegistry cardRegistry;
-
   final Function(Map map) onSubmit;
   final Function(String url) onOpenUrl;
-
   final bool showDebugJson;
   final bool approximateDarkThemeColors;
 
@@ -264,14 +281,15 @@ class RawAdaptiveCard extends StatefulWidget {
   RawAdaptiveCardState createState() => RawAdaptiveCardState();
 }
 
+
 class RawAdaptiveCardState extends State<RawAdaptiveCard> {
   // Wrapper around the host config
-  ReferenceResolver _resolver;
-  UUIDGenerator idGenerator;
-  CardRegistry cardRegistry;
+  late ReferenceResolver _resolver;
+  late UUIDGenerator idGenerator;
+  late CardRegistry cardRegistry;
 
   // The root element
-  Widget _adaptiveElement;
+  late Widget _adaptiveElement;
 
   static RawAdaptiveCardState of(BuildContext context) {
     return Provider.of<RawAdaptiveCardState>(context);
@@ -282,11 +300,12 @@ class RawAdaptiveCardState extends State<RawAdaptiveCard> {
     super.initState();
     _resolver = ReferenceResolver(
       hostConfig: widget.hostConfig,
+      currentStyle: ''
     );
     idGenerator = UUIDGenerator();
     cardRegistry = widget.cardRegistry;
 
-    _adaptiveElement = widget.cardRegistry.getBaseElement(widget.map);
+    _adaptiveElement = widget.cardRegistry.getBaseElement(widget.map as Map<String,dynamic>);
     // print("in RawAdaptiveCard");
     // print(json.encode(widget.map));
   }
@@ -319,11 +338,11 @@ class RawAdaptiveCardState extends State<RawAdaptiveCard> {
   }
 
   void showError(String message) {
-    Scaffold.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// min and max dates may be null, in this case no constraint is made in that direction
-  Future<DateTime> pickDate(DateTime min, DateTime max) {
+  Future<DateTime?> pickDate(DateTime? min, DateTime? max) {
     DateTime initialDate = DateTime.now();
     return showDatePicker(
         context: context,
@@ -332,7 +351,7 @@ class RawAdaptiveCardState extends State<RawAdaptiveCard> {
         lastDate: max ?? DateTime.now().add(Duration(days: 10000)));
   }
 
-  Future<TimeOfDay> pickTime() {
+  Future<TimeOfDay?> pickTime() {
     TimeOfDay initialTimeOfDay = TimeOfDay.now();
     return showTimePicker(context: context, initialTime: initialTimeOfDay);
   }
@@ -345,8 +364,8 @@ class RawAdaptiveCardState extends State<RawAdaptiveCard> {
       if (widget.showDebugJson) {
         child = Column(
           children: <Widget>[
-            FlatButton(
-              textColor: Colors.indigo,
+            TextButton(
+              //textColor: Colors.indigo,
               onPressed: () {
                 JsonEncoder encoder = new JsonEncoder.withIndent('  ');
                 String prettyprint = encoder.convert(widget.map);
@@ -356,12 +375,12 @@ class RawAdaptiveCardState extends State<RawAdaptiveCard> {
                       return AlertDialog(
                         title: Text(
                             "JSON (only added in debug mode, you can also turn"
-                            "it of manually by passing showDebugJson = false)"),
+                                "it of manually by passing showDebugJson = false)"),
                         content:
-                            SingleChildScrollView(child: Text(prettyprint)),
+                        SingleChildScrollView(child: Text(prettyprint)),
                         actions: <Widget>[
                           Center(
-                            child: FlatButton(
+                            child: TextButton(
                               onPressed: () => Navigator.of(context).pop(),
                               child: Text("Thanks"),
                             ),
@@ -390,7 +409,7 @@ class RawAdaptiveCardState extends State<RawAdaptiveCard> {
           margin: EdgeInsets.all(0.0),
           shape: Border.all(color: Colors.transparent),
           elevation:
-              _resolver.resolveElevation(widget.map["elevation"] ?? "default"),
+          _resolver.resolveElevation(widget.map["elevation"] ?? "default"),
           borderOnForeground: false,
           child: child,
         ),
@@ -398,6 +417,7 @@ class RawAdaptiveCardState extends State<RawAdaptiveCard> {
     );
   }
 }
+
 
 /// The visitor, the function is called once for every element in the tree
 typedef AdaptiveElementVisitor = void Function(AdaptiveElement element);
@@ -433,13 +453,13 @@ typedef AdaptiveElementVisitor = void Function(AdaptiveElement element);
 /// implement the method [visitChildren] and call visitor(this) in addition call
 /// [visitChildren] on each child with the passed visitor.
 abstract class AdaptiveElement {
-  AdaptiveElement({@required this.adaptiveMap, @required this.widgetState}) {
+  AdaptiveElement({required this.adaptiveMap, required this.widgetState}) {
     loadTree();
   }
 
   final Map adaptiveMap;
 
-  String id;
+  String id='';
 
   /// Because some widgets (looking at you ShowCardAction) need to set the state
   /// all elements get a way to set the state.
@@ -508,8 +528,8 @@ abstract class AdaptiveElement {
 /// All values can also be null, in that case the default is used
 class ReferenceResolver {
   ReferenceResolver({
-    this.hostConfig,
-    this.currentStyle,
+    required this.hostConfig,
+    required this.currentStyle,
   });
 
   final Map hostConfig;
@@ -585,7 +605,7 @@ class ReferenceResolver {
     return elevation;
   }
 
-  ReferenceResolver copyWith({String style}) {
+  ReferenceResolver copyWith({String? style}) {
     assert(style == null || style == "default" || style == "emphasis");
     String myStyle = style ?? "default";
     return ReferenceResolver(

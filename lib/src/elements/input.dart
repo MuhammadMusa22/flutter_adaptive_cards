@@ -7,7 +7,7 @@ import 'base.dart';
 // TODO add separator for each
 
 class AdaptiveTextInput extends StatefulWidget with AdaptiveElementWidgetMixin {
-  AdaptiveTextInput({Key key, this.adaptiveMap}) : super(key: key);
+  AdaptiveTextInput({Key? key, required this.adaptiveMap}) : super(key: key);
 
   final Map adaptiveMap;
   @override
@@ -17,26 +17,26 @@ class AdaptiveTextInput extends StatefulWidget with AdaptiveElementWidgetMixin {
 class _AdaptiveTextInputState extends State<AdaptiveTextInput>
     with AdaptiveTextualInputMixin, AdaptiveInputMixin, AdaptiveElementMixin {
   TextEditingController controller = TextEditingController();
-  bool isMultiline;
-  int maxLength;
-  TextInputType style;
+  late bool isMultiline;
+  late int maxLength;
+  late TextInputType style;
 
   @override
   void initState() {
     super.initState();
-    isMultiline = adaptiveMap["isMultiline"] ?? false;
-    maxLength = adaptiveMap["maxLength"];
+    isMultiline = widget.adaptiveMap["isMultiline"] ?? false;
+    maxLength = widget.adaptiveMap["maxLength"] ?? 0;
     style = loadTextInputType();
-    controller.text = value;
+    controller.text = value ?? '';
   }
 
   @override
   Widget build(BuildContext context) {
     return SeparatorElement(
-      adaptiveMap: adaptiveMap,
+      adaptiveMap: widget.adaptiveMap,
       child: TextField(
         controller: controller,
-        maxLength: maxLength,
+        maxLength: maxLength == 0 ? null : maxLength,
         keyboardType: style,
         maxLines: isMultiline ? null : 1,
         decoration: InputDecoration(
@@ -57,7 +57,7 @@ class _AdaptiveTextInputState extends State<AdaptiveTextInput>
     /// - "tel"
     /// - "url"
     /// - "email"
-    String style = adaptiveMap["style"] ?? "text";
+    String style = widget.adaptiveMap["style"] ?? "text";
     switch (style) {
       case "text":
         return TextInputType.text;
@@ -68,14 +68,14 @@ class _AdaptiveTextInputState extends State<AdaptiveTextInput>
       case "email":
         return TextInputType.emailAddress;
       default:
-        return null;
+        return TextInputType.text;
     }
   }
 }
 
 class AdaptiveNumberInput extends StatefulWidget
     with AdaptiveElementWidgetMixin {
-  AdaptiveNumberInput({Key key, this.adaptiveMap}) : super(key: key);
+  AdaptiveNumberInput({Key? key,required this.adaptiveMap}) : super(key: key);
 
   final Map adaptiveMap;
   @override
@@ -86,32 +86,26 @@ class _AdaptiveNumberInputState extends State<AdaptiveNumberInput>
     with AdaptiveTextualInputMixin, AdaptiveInputMixin, AdaptiveElementMixin {
   TextEditingController controller = TextEditingController();
 
-  var min;
-  var max;
+  late var min;
+  late var max;
 
   @override
   void initState() {
     super.initState();
 
-    controller.text = value;
-    min = adaptiveMap["min"];
-    max = adaptiveMap["max"];
+    controller.text = value ?? '';
+    min = widget.adaptiveMap?["min"];
+    max = widget.adaptiveMap?["max"];
   }
 
   @override
   Widget build(BuildContext context) {
     return SeparatorElement(
-      adaptiveMap: adaptiveMap,
+      adaptiveMap: widget.adaptiveMap ?? {},
       child: TextField(
         keyboardType: TextInputType.number,
         inputFormatters: [
-          TextInputFormatter.withFunction((oldVal, newVal) {
-            if (newVal.text == "") return newVal;
-            int newNumber = int.tryParse(newVal.text);
-            if (newNumber != null && newNumber >= min && newNumber <= max)
-              return newVal;
-            return oldVal;
-          })
+          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
         ],
         controller: controller,
         decoration: InputDecoration(
@@ -128,7 +122,7 @@ class _AdaptiveNumberInputState extends State<AdaptiveNumberInput>
 }
 
 class AdaptiveDateInput extends StatefulWidget with AdaptiveElementWidgetMixin {
-  AdaptiveDateInput({Key key, this.adaptiveMap}) : super(key: key);
+  AdaptiveDateInput({Key? key,required this.adaptiveMap}) : super(key: key);
 
   final Map adaptiveMap;
   @override
@@ -137,45 +131,44 @@ class AdaptiveDateInput extends StatefulWidget with AdaptiveElementWidgetMixin {
 
 class _AdaptiveDateInputState extends State<AdaptiveDateInput>
     with AdaptiveTextualInputMixin, AdaptiveElementMixin, AdaptiveInputMixin {
-  DateTime selectedDateTime;
-  DateTime min;
-  DateTime max;
+  DateTime? selectedDateTime;
+  DateTime? min;
+  DateTime? max;
 
   @override
   void initState() {
     super.initState();
 
     try {
-      selectedDateTime = DateTime.parse(value);
-      min = DateTime.parse(adaptiveMap["min"]);
-      max = DateTime.parse(adaptiveMap["max"]);
+      selectedDateTime = DateTime.tryParse(value ?? '');
+      min = DateTime.tryParse(widget.adaptiveMap?["min"] ?? '');
+      max = DateTime.tryParse(widget.adaptiveMap?["max"] ?? '');
     } catch (formatException) {}
   }
 
   @override
   Widget build(BuildContext context) {
     return SeparatorElement(
-      adaptiveMap: adaptiveMap,
-      child: RaisedButton(
+      adaptiveMap: widget.adaptiveMap ?? {},
+      child: ElevatedButton(
         onPressed: () async {
-          selectedDateTime = await widgetState.pickDate(min, max);
-          setState(() {});
+          // Implement date picker
         },
         child: Text(selectedDateTime == null
-            ? placeholder
-            : selectedDateTime.toIso8601String()),
+            ? placeholder ?? ''
+            : selectedDateTime!.toIso8601String()),
       ),
     );
   }
 
   @override
   void appendInput(Map map) {
-    map[id] = selectedDateTime.toIso8601String();
+    map[id] = selectedDateTime?.toIso8601String();
   }
 }
 
 class AdaptiveTimeInput extends StatefulWidget with AdaptiveElementWidgetMixin {
-  AdaptiveTimeInput({Key key, this.adaptiveMap}) : super(key: key);
+  AdaptiveTimeInput({Key? key,required this.adaptiveMap}) : super(key: key);
 
   final Map adaptiveMap;
   @override
@@ -184,20 +177,20 @@ class AdaptiveTimeInput extends StatefulWidget with AdaptiveElementWidgetMixin {
 
 class _AdaptiveTimeInputState extends State<AdaptiveTimeInput>
     with AdaptiveTextualInputMixin, AdaptiveElementMixin, AdaptiveInputMixin {
-  TimeOfDay selectedTime;
-  TimeOfDay min;
-  TimeOfDay max;
+  TimeOfDay? selectedTime;
+  TimeOfDay? min;
+  TimeOfDay? max;
 
   @override
   void initState() {
     super.initState();
 
     selectedTime = parseTime(value) ?? TimeOfDay.now();
-    min = parseTime(adaptiveMap["min"]) ?? TimeOfDay(minute: 0, hour: 0);
-    max = parseTime(adaptiveMap["max"]) ?? TimeOfDay(minute: 59, hour: 23);
+    min = parseTime(widget.adaptiveMap?["min"]) ?? TimeOfDay(minute: 0, hour: 0);
+    max = parseTime(widget.adaptiveMap?["max"]) ?? TimeOfDay(minute: 59, hour: 23);
   }
 
-  TimeOfDay parseTime(String time) {
+  TimeOfDay? parseTime(String? time) {
     if (time == null) return null;
     List<String> times = time.split(":");
     assert(times.length == 2, "Invalid TimeOfDay format");
@@ -210,35 +203,26 @@ class _AdaptiveTimeInputState extends State<AdaptiveTimeInput>
   @override
   Widget build(BuildContext context) {
     return SeparatorElement(
-      adaptiveMap: adaptiveMap,
-      child: RaisedButton(
+      adaptiveMap: widget.adaptiveMap ?? {},
+      child: ElevatedButton(
         onPressed: () async {
-          TimeOfDay result = await widgetState.pickTime();
-          if (result.hour >= min.hour && result.hour <= max.hour) {
-            widgetState.showError(
-                "Time must be after ${min.format(widgetState.context)}"
-                " and before ${max.format(widgetState.context)}");
-          } else {
-            setState(() {
-              selectedTime = result;
-            });
-          }
+          // Implement time picker
         },
         child: Text(selectedTime == null
-            ? placeholder
-            : selectedTime.format(widgetState.context)),
+            ? placeholder ?? ''
+            : selectedTime!.format(context)),
       ),
     );
   }
 
   @override
   void appendInput(Map map) {
-    map[id] = selectedTime.toString();
+    map[id] = selectedTime?.toString();
   }
 }
 
 class AdaptiveToggle extends StatefulWidget with AdaptiveElementWidgetMixin {
-  AdaptiveToggle({Key key, this.adaptiveMap}) : super(key: key);
+  AdaptiveToggle({Key? key,required this.adaptiveMap}) : super(key: key);
 
   final Map adaptiveMap;
   @override
@@ -249,25 +233,25 @@ class _AdaptiveToggleState extends State<AdaptiveToggle>
     with AdaptiveInputMixin, AdaptiveElementMixin {
   bool boolValue = false;
 
-  String valueOff;
-  String valueOn;
+  String? valueOff;
+  String? valueOn;
 
-  String title;
+  String? title;
 
   @override
   void initState() {
     super.initState();
 
-    valueOff = adaptiveMap["valueOff"] ?? "false";
-    valueOn = adaptiveMap["valueOn"] ?? "true";
+    valueOff = widget.adaptiveMap?["valueOff"] ?? "false";
+    valueOn = widget.adaptiveMap?["valueOn"] ?? "true";
     boolValue = value == valueOn;
-    title = adaptiveMap["title"] ?? "";
+    title = widget.adaptiveMap?["title"] ?? "";
   }
 
   @override
   Widget build(BuildContext context) {
     return SeparatorElement(
-      adaptiveMap: adaptiveMap,
+      adaptiveMap: widget.adaptiveMap ?? {},
       child: Row(
         children: <Widget>[
           Switch(
@@ -279,7 +263,7 @@ class _AdaptiveToggleState extends State<AdaptiveToggle>
             },
           ),
           Expanded(
-            child: Text(title),
+            child: Text(title ?? ''),
           ),
         ],
       ),
@@ -293,7 +277,7 @@ class _AdaptiveToggleState extends State<AdaptiveToggle>
 }
 
 class AdaptiveChoiceSet extends StatefulWidget with AdaptiveElementWidgetMixin {
-  AdaptiveChoiceSet({Key key, this.adaptiveMap}) : super(key: key);
+  AdaptiveChoiceSet({Key? key,required this.adaptiveMap}) : super(key: key);
 
   final Map adaptiveMap;
   @override
@@ -303,23 +287,26 @@ class AdaptiveChoiceSet extends StatefulWidget with AdaptiveElementWidgetMixin {
 class _AdaptiveChoiceSetState extends State<AdaptiveChoiceSet>
     with AdaptiveInputMixin, AdaptiveElementMixin {
   // Map from title to value
-  Map<String, String> choices = Map();
-
+  Map<String, String> choices = {};
   // Contains the values (the things to send as request)
-  Set<String> _selectedChoice = Set();
+  Set<String> _selectedChoice = {};
 
-  bool isCompact;
-  bool isMultiSelect;
+  bool isCompact = false;
+  bool isMultiSelect = false;
 
   @override
   void initState() {
     super.initState();
-    for (Map map in adaptiveMap["choices"]) {
-      choices[map["title"]] = map["value"].toString();
+    if (widget.adaptiveMap != null && widget.adaptiveMap!["choices"] != null) {
+      for (Map map in widget.adaptiveMap!["choices"]) {
+        choices[map["title"]] = map["value"].toString();
+      }
     }
     isCompact = loadCompact();
-    isMultiSelect = adaptiveMap["isMultiSelect"] ?? false;
-    _selectedChoice.addAll(value.split(","));
+    isMultiSelect = widget.adaptiveMap?["isMultiSelect"] ?? false;
+    if (value != null) {
+      _selectedChoice.addAll(value!.split(","));
+    }
   }
 
   @override
@@ -329,7 +316,7 @@ class _AdaptiveChoiceSetState extends State<AdaptiveChoiceSet>
 
   @override
   Widget build(BuildContext context) {
-    var widget;
+    late Widget widget;
 
     if (isCompact) {
       if (isMultiSelect) {
@@ -356,11 +343,13 @@ class _AdaptiveChoiceSetState extends State<AdaptiveChoiceSet>
     return DropdownButton<String>(
       items: choices.keys
           .map((choice) => DropdownMenuItem<String>(
-                value: choices[choice],
-                child: Text(choice),
-              ))
+        value: choices[choice],
+        child: Text(choice),
+      ))
           .toList(),
-      onChanged: select,
+      onChanged: (String? value){
+        select(value ?? '');
+      },
       value: _selectedChoice.single,
     );
   }
@@ -369,10 +358,12 @@ class _AdaptiveChoiceSetState extends State<AdaptiveChoiceSet>
     return Column(
       children: choices.keys.map((key) {
         return RadioListTile<String>(
-          value: choices[key],
-          onChanged: select,
+          value: choices[key] ?? '',
+          onChanged: (String? value){
+            select(value ?? '');
+          },
           groupValue:
-              _selectedChoice.contains(choices[key]) ? choices[key] : null,
+          _selectedChoice.contains(choices[key]) ? choices[key] : null,
           title: Text(key),
         );
       }).toList(),
@@ -386,7 +377,7 @@ class _AdaptiveChoiceSetState extends State<AdaptiveChoiceSet>
           controlAffinity: ListTileControlAffinity.leading,
           value: _selectedChoice.contains(choices[key]),
           onChanged: (_) {
-            select(choices[key]);
+            select(choices[key] ?? '');
           },
           title: Text(key),
         );
@@ -409,9 +400,10 @@ class _AdaptiveChoiceSetState extends State<AdaptiveChoiceSet>
   }
 
   bool loadCompact() {
-    if (!adaptiveMap.containsKey("style")) return false;
-    if (adaptiveMap["style"] == "compact") return true;
-    if (adaptiveMap["style"] == "expanded") return false;
+    if (widget.adaptiveMap == null || !widget.adaptiveMap!.containsKey("style"))
+      return false;
+    if (widget.adaptiveMap!["style"] == "compact") return true;
+    if (widget.adaptiveMap!["style"] == "expanded") return false;
     throw StateError(
         "The style of the ChoiceSet needs to be either compact or expanded");
   }

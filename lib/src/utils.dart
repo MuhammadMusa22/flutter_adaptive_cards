@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:tinycolor/tinycolor.dart';
+import 'package:tinycolor2/tinycolor2.dart';
 import 'package:uuid/uuid.dart';
 
 class FadeAnimation extends StatefulWidget {
   FadeAnimation(
-      {this.child, this.duration = const Duration(milliseconds: 500)});
+      {required this.child, this.duration = const Duration(milliseconds: 500)});
 
   final Widget child;
   final Duration duration;
@@ -16,7 +16,7 @@ class FadeAnimation extends StatefulWidget {
 
 class _FadeAnimationState extends State<FadeAnimation>
     with SingleTickerProviderStateMixin {
-  AnimationController animationController;
+  late AnimationController animationController;
 
   @override
   void initState() {
@@ -127,7 +127,7 @@ Color adjustColorToFitDarkTheme(Color color, Brightness brightness) {
 /// TODO this needs a bunch of tests
 String parseTextString(String text) {
   return text.replaceAllMapped(RegExp(r'{{.*}}'), (match) {
-    String res = match.group(0);
+    String res = match.group(0) ??'';
     String input = res.substring(2, res.length -2);
     input = input.replaceAll(" ", "");
 
@@ -142,7 +142,7 @@ String parseTextString(String text) {
       // Wrong format
       if(items.length != 2) return res;
 
-      DateTime dateTime = DateTime.tryParse(items[0]);
+      DateTime dateTime = DateTime.tryParse(items[0]) ?? DateTime.now();
 
       // TODO use locale
       DateFormat dateFormat;
@@ -165,7 +165,7 @@ String parseTextString(String text) {
 
     } else if(type == "TIME") {
       String time = input.substring(5, input.length - 1);
-      DateTime dateTime = DateTime.tryParse(time);
+      DateTime dateTime = DateTime.tryParse(time) ?? DateTime.now();
       if(dateTime == null) return res;
 
       DateFormat dateFormat = DateFormat("jm");
